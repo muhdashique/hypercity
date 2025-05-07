@@ -72,9 +72,14 @@ def dashboard(request):
     Display the dashboard with customer data
     """
     customers = Customer.objects.all().order_by('-created_at')
+    # Get all superusers
+    from django.contrib.auth.models import User
+    superusers = User.objects.filter(is_superuser=True)
+    
     context = {
         'customers': customers,
         'username': request.user.username,
+        'all_users': superusers,  # Pass superusers to template
     }
     return render(request, 'dashboard.html', context)
 

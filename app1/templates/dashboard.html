@@ -404,6 +404,62 @@
             text-decoration: underline;
         }
         
+        /* Users Dropdown Styles */
+        .user-filter-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown-content a:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-content a:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .user-filter-dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-btn {
+            background-color: #f0f2f5;
+            border: 1px solid #dee2e6;
+            color: #333;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .dropdown-btn:hover {
+            background-color: #e9ecef;
+        }
+        
         /* Mobile Responsive Styles */
         @media (max-width: 768px) {
             .header {
@@ -454,6 +510,28 @@
             
             .customer-cards {
                 display: block;
+            }
+            
+            .dropdown-content {
+                position: static;
+                box-shadow: none;
+                border: 1px solid #dee2e6;
+                margin-top: 10px;
+            }
+            
+            .user-filter-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            
+            .user-filter-dropdown {
+                width: 100%;
+            }
+            
+            .dropdown-btn {
+                width: 100%;
+                justify-content: space-between;
             }
         }
         
@@ -520,7 +598,7 @@
         <div class="header">
             <div class="welcome-section">
                 <div class="logo">
-                    <img src="{% static 'D:\IMC project\hypercity_project\static\images\logo.png' %}" alt="Company Logo">
+                    <img src="{% static 'images/logo.png' %}" alt="Company Logo">
                 </div>
                 <div class="welcome-text">
                     <h1>Dashboard</h1>
@@ -528,10 +606,37 @@
                 </div>
             </div>
             <div class="user-info">
-                <span class="user-name" onclick="filterByCurrentUser()">{{ username }}</span>
+                <span class="user-name">{{ username }}</span>
                 <button class="btn" onclick="openAddModal()">Add Customer</button>
                 <a href="{% url 'logout' %}" class="btn">Logout</a>
             </div>
+        </div>
+        <div class="customer-header">
+            <div>
+                <h2>Customer Data</h2>
+                <div id="filter-info" class="filter-info" style="display: none;">
+                    <div class="filter-controls">
+                        <span>Showing customers added by: </span>
+                        <div class="filter-badge">
+                            <span id="filter-username"></span>
+                            <span class="clear-filter" onclick="clearFilter()">&times;</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- <div class="user-filter-controls">
+                <div class="user-filter-dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fa-solid fa-filter"></i> Filter by Admin <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="#" onclick="filterByUser('All'); return false;">All Admins</a>
+                        {% for user in all_users %}
+                            <a href="#" onclick="filterByUser('{{ user.username }}'); return false;">{{ user.username }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div> -->
         </div>
         
         {% if messages %}
@@ -556,7 +661,19 @@
                         </div>
                     </div>
                 </div>
-                <!-- <button class="btn" onclick="openAddModal()">Add Customer</button> -->
+                <div class="user-filter-controls">
+                    <div class="user-filter-dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fa-solid fa-filter"></i> Filter by User <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="#" onclick="filterByUser('All'); return false;">All Users</a>
+                            {% for user in all_users %}
+                                <a href="#" onclick="filterByUser('{{ user.username }}'); return false;">{{ user.username }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
             
             {% if customers %}
@@ -584,7 +701,7 @@
                                     <td>{{ customer.phone_number }}</td>
                                     <td>{{ customer.card_number }}</td>
                                     <td>{{ customer.created_at|date:"M d, Y" }}</td>
-                                    <td>{{ customer.added_by }}</td>
+                                    <td class="added-by-cell">{{ customer.added_by }}</td>
                                     <td>
                                         <div class="action-buttons">
                                             <button class="btn btn-edit" onclick="openEditModal('{{ customer.id }}', '{{ customer.name }}', '{{ customer.place }}', '{{ customer.phone_number }}', '{{ customer.card_number }}')"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -624,7 +741,7 @@
                                 </div>
                                 <div class="customer-card-row">
                                     <span class="customer-card-label">Added By:</span>
-                                    <span class="customer-card-value">{{ customer.added_by }}</span>
+                                    <span class="customer-card-value added-by-value">{{ customer.added_by }}</span>
                                 </div>
                             </div>
                             <div class="customer-card-footer">
@@ -728,145 +845,325 @@
 
     <script>
         // Function to open delete confirmation modal
-        function openDeleteModal(customerId, customerName) {
-            document.getElementById('deleteModal').style.display = 'block';
-            document.getElementById('customerName').textContent = customerName;
-            document.getElementById('deleteForm').action = "{% url 'delete_customer' 0 %}".replace('0', customerId);
-        }
+function openDeleteModal(customerId, customerName) {
+    document.getElementById('deleteModal').style.display = 'block';
+    document.getElementById('customerName').textContent = customerName;
+    document.getElementById('deleteForm').action = "{% url 'delete_customer' 0 %}".replace('0', customerId);
+}
 
-        // Function to close delete confirmation modal
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-        }
+// Function to close delete confirmation modal
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
 
-        // Function to open edit modal
-        function openEditModal(customerId, name, place, phone, card) {
-            document.getElementById('editModal').style.display = 'block';
-            document.getElementById('editName').value = name;
-            document.getElementById('editPlace').value = place;
-            document.getElementById('editPhone').value = phone;
-            document.getElementById('editCard').value = card;
-            document.getElementById('editForm').action = "{% url 'edit_customer' 0 %}".replace('0', customerId);
-        }
+// Function to open edit modal
+function openEditModal(customerId, name, place, phone, card) {
+    document.getElementById('editModal').style.display = 'block';
+    document.getElementById('editName').value = name;
+    document.getElementById('editPlace').value = place;
+    document.getElementById('editPhone').value = phone;
+    document.getElementById('editCard').value = card;
+    document.getElementById('editForm').action = "{% url 'edit_customer' 0 %}".replace('0', customerId);
+}
 
-        // Function to close edit modal
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
+// Function to close edit modal
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
 
-        // Function to open add customer modal
-        function openAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
+// Function to open add customer modal
+function openAddModal() {
+    document.getElementById('addModal').style.display = 'block';
+}
 
-        // Function to close add customer modal
-        function closeAddModal() {
-            document.getElementById('addModal').style.display = 'none';
-        }
+// Function to close add customer modal
+function closeAddModal() {
+    document.getElementById('addModal').style.display = 'none';
+}
 
-        // Filter by user function
-        function filterByUser(username) {
-            // Update filter info display
-            document.getElementById('filter-info').style.display = 'block';
-            document.getElementById('filter-username').textContent = username;
-            
-            // Filter table rows
-            const tableRows = document.querySelectorAll('#customer-table-body tr');
-            let visibleCount = 0;
-            
-            tableRows.forEach(row => {
-                if (row.getAttribute('data-added-by') === username) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            
-            // Filter card view for mobile
-            const cardItems = document.querySelectorAll('.customer-card');
-            let visibleCardCount = 0;
-            
-            cardItems.forEach(card => {
-                if (card.getAttribute('data-added-by') === username) {
-                    card.style.display = '';
-                    visibleCardCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Show empty state if no results
-            if (visibleCount === 0 && visibleCardCount === 0) {
-                document.getElementById('empty-filter-state').style.display = 'block';
-                document.querySelector('.customer-table-container').style.display = 'none';
-                document.getElementById('customer-cards-container').style.display = 'none';
-            } else {
-                document.getElementById('empty-filter-state').style.display = 'none';
-                document.querySelector('.customer-table-container').style.display = '';
-                document.getElementById('customer-cards-container').style.display = '';
-            }
+// Filter by user function
+function filterByUser(username) {
+    // If "All Users" is selected, show all records
+    if (username === 'All') {
+        clearFilter();
+        return;
+    }
+    
+    // Update filter info display
+    document.getElementById('filter-info').style.display = 'block';
+    document.getElementById('filter-username').textContent = username;
+    
+    // Filter table rows
+    const tableRows = document.querySelectorAll('#customer-table-body tr');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        if (row.getAttribute('data-added-by') === username) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
         }
-        
-        // Filter by current user (username in header)
-        function filterByCurrentUser() {
-            const currentUsername = document.querySelector('.user-name').textContent.trim();
-            filterByUser(currentUsername);
+    });
+    
+    // Filter card view for mobile
+    const cardItems = document.querySelectorAll('.customer-card');
+    let visibleCardCount = 0;
+    
+    cardItems.forEach(card => {
+        if (card.getAttribute('data-added-by') === username) {
+            card.style.display = '';
+            visibleCardCount++;
+        } else {
+            card.style.display = 'none';
         }
-        
-        // Clear filter function
-        function clearFilter() {
-            // Hide filter info
-            document.getElementById('filter-info').style.display = 'none';
-            
-            // Show all table rows
-            const tableRows = document.querySelectorAll('#customer-table-body tr');
-            tableRows.forEach(row => {
-                row.style.display = '';
-            });
-            
-            // Show all card items
-            const cardItems = document.querySelectorAll('.customer-card');
-            cardItems.forEach(card => {
-                card.style.display = '';
-            });
-            
-            // Hide empty state
-            document.getElementById('empty-filter-state').style.display = 'none';
-            
-            // Make sure table container is visible
-            document.querySelector('.customer-table-container').style.display = '';
-            document.getElementById('customer-cards-container').style.display = '';
+    });
+    
+    // Show empty state if no results
+    const tableContainer = document.querySelector('.customer-table-container');
+    const cardsContainer = document.querySelector('.customer-cards');
+    const emptyState = document.getElementById('empty-filter-state');
+    
+    if (visibleCount === 0 && visibleCardCount === 0) {
+        tableContainer.style.display = 'none';
+        cardsContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+    } else {
+        emptyState.style.display = 'none';
+        if (window.innerWidth > 768) {
+            tableContainer.style.display = 'block';
+        } else {
+            cardsContainer.style.display = 'block';
         }
+    }
+}
 
-        // Close modals if user clicks outside of them
-        window.onclick = function(event) {
-            const deleteModal = document.getElementById('deleteModal');
-            const editModal = document.getElementById('editModal');
-            const addModal = document.getElementById('addModal');
-            
-            if (event.target == deleteModal) {
-                closeDeleteModal();
-            }
-            
-            if (event.target == editModal) {
-                closeEditModal();
-            }
-            
-            if (event.target == addModal) {
-                closeAddModal();
-            }
-        }
-        
-        // Auto-close success messages after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                const messages = document.querySelectorAll('.message.success');
-                messages.forEach(function(message) {
-                    message.style.display = 'none';
-                });
-            }, 5000);
+// Filter by current user
+function filterByCurrentUser() {
+    const currentUsername = '{{ username }}';
+    filterByUser(currentUsername);
+}
+
+// Clear filter function
+function clearFilter() {
+    // Hide filter info
+    document.getElementById('filter-info').style.display = 'none';
+    
+    // Show all table rows
+    const tableRows = document.querySelectorAll('#customer-table-body tr');
+    tableRows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Show all cards
+    const cardItems = document.querySelectorAll('.customer-card');
+    cardItems.forEach(card => {
+        card.style.display = '';
+    });
+    
+    // Hide empty state and show appropriate container
+    document.getElementById('empty-filter-state').style.display = 'none';
+    
+    if (window.innerWidth > 768) {
+        document.querySelector('.customer-table-container').style.display = 'block';
+    } else {
+        document.querySelector('.customer-cards').style.display = 'block';
+    }
+}
+
+// Filter when clicking on "Added By" cell
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event to all added-by cells in the table
+    const addedByCells = document.querySelectorAll('.added-by-cell');
+    addedByCells.forEach(cell => {
+        cell.classList.add('added-by-filter');
+        cell.addEventListener('click', function() {
+            const username = this.textContent.trim();
+            filterByUser(username);
         });
+    });
+    
+    // Add click event to all added-by values in the card view
+    const addedByValues = document.querySelectorAll('.added-by-value');
+    addedByValues.forEach(value => {
+        value.classList.add('added-by-filter');
+        value.addEventListener('click', function() {
+            const username = this.textContent.trim();
+            filterByUser(username);
+        });
+    });
+    
+    // Close modal when clicking outside of it
+    window.addEventListener('click', function(event) {
+        const deleteModal = document.getElementById('deleteModal');
+        const editModal = document.getElementById('editModal');
+        const addModal = document.getElementById('addModal');
+        
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+        if (event.target === editModal) {
+            closeEditModal();
+        }
+        if (event.target === addModal) {
+            closeAddModal();
+        }
+    });
+    
+    // Handle responsive display of table vs cards
+    function handleResponsiveDisplay() {
+        const tableContainer = document.querySelector('.customer-table-container');
+        const cardsContainer = document.querySelector('.customer-cards');
+        
+        if (window.innerWidth <= 768) {
+            tableContainer.style.display = 'none';
+            cardsContainer.style.display = 'block';
+        } else {
+            tableContainer.style.display = 'block';
+            cardsContainer.style.display = 'none';
+        }
+    }
+    
+    // Initial check on page load
+    handleResponsiveDisplay();
+    
+    // Check on window resize
+    window.addEventListener('resize', handleResponsiveDisplay);
+    
+    // Form validation
+    const addForm = document.getElementById('addForm');
+    if (addForm) {
+        addForm.addEventListener('submit', function(event) {
+            validateForm(event, this);
+        });
+    }
+    
+    const editForm = document.getElementById('editForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(event) {
+            validateForm(event, this);
+        });
+    }
+    
+    function validateForm(event, form) {
+        // Phone number validation
+        const phoneInput = form.querySelector('[name="phone_number"]');
+        if (phoneInput && !/^\d{10}$/.test(phoneInput.value.trim())) {
+            alert('Please enter a valid 10-digit phone number.');
+            event.preventDefault();
+            return false;
+        }
+        
+        // Card number validation (simple check for non-empty)
+        const cardInput = form.querySelector('[name="card_number"]');
+        if (cardInput && cardInput.value.trim() === '') {
+            alert('Card number cannot be empty.');
+            event.preventDefault();
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // Auto-hide messages after 5 seconds
+    const messages = document.querySelectorAll('.message');
+    if (messages.length > 0) {
+        setTimeout(function() {
+            messages.forEach(message => {
+                message.style.opacity = '0';
+                message.style.transition = 'opacity 1s';
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 1000);
+            });
+        }, 5000);
+    }
+});
+    </script>
+    <script>
+        // Filter by user function
+function filterByUser(username) {
+    // If "All Admins" is selected, show all records
+    if (username === 'All') {
+        clearFilter();
+        return;
+    }
+    
+    // Update filter info display
+    document.getElementById('filter-info').style.display = 'block';
+    document.getElementById('filter-username').textContent = username;
+    
+    // Filter table rows
+    const tableRows = document.querySelectorAll('#customer-table-body tr');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        if (row.getAttribute('data-added-by') === username) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Filter card view for mobile
+    const cardItems = document.querySelectorAll('.customer-card');
+    let visibleCardCount = 0;
+    
+    cardItems.forEach(card => {
+        if (card.getAttribute('data-added-by') === username) {
+            card.style.display = '';
+            visibleCardCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show empty state if no results
+    const tableContainer = document.querySelector('.customer-table-container');
+    const cardsContainer = document.querySelector('.customer-cards');
+    const emptyState = document.getElementById('empty-filter-state');
+    
+    if (visibleCount === 0 && visibleCardCount === 0) {
+        tableContainer.style.display = 'none';
+        cardsContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+    } else {
+        emptyState.style.display = 'none';
+        if (window.innerWidth > 768) {
+            tableContainer.style.display = 'block';
+        } else {
+            cardsContainer.style.display = 'block';
+        }
+    }
+}
+
+// Clear filter function
+function clearFilter() {
+    // Hide filter info
+    document.getElementById('filter-info').style.display = 'none';
+    
+    // Show all table rows
+    const tableRows = document.querySelectorAll('#customer-table-body tr');
+    tableRows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Show all cards
+    const cardItems = document.querySelectorAll('.customer-card');
+    cardItems.forEach(card => {
+        card.style.display = '';
+    });
+    
+    // Hide empty state and show appropriate container
+    document.getElementById('empty-filter-state').style.display = 'none';
+    
+    if (window.innerWidth > 768) {
+        document.querySelector('.customer-table-container').style.display = 'block';
+    } else {
+        document.querySelector('.customer-cards').style.display = 'block';
+    }
+}
     </script>
 </body>
 </html>

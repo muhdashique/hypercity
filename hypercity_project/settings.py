@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'hypercity',  
         'USER': 'postgres',  
-        'PASSWORD': '1234',  # Ensure this is correct
+        'PASSWORD': 'info@imc',  # Ensure this is correct
         'HOST': 'localhost',  
         'PORT': '5432',  
     }
