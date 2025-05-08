@@ -85,16 +85,12 @@ def dashboard(request):
 
 @login_required
 def add_customer(request):
-    """
-    Add a new customer using the modal form
-    """
     if request.method == 'POST':
         name = request.POST.get('name')
         place = request.POST.get('place')
         phone_number = request.POST.get('phone_number')
-        card_number = request.POST.get('card_number')
+        card_number = request.POST.get('card_number') or None
         
-        # Create new customer
         customer = Customer(
             name=name,
             place=place,
@@ -103,12 +99,12 @@ def add_customer(request):
             added_by=request.user.username
         )
         customer.save()
-        
+
         messages.success(request, f'Customer "{name}" added successfully!')
         return redirect('dashboard')
     
-    # If someone tries to access this URL directly without POST data
     return redirect('dashboard')
+
 
 @login_required
 def edit_customer(request, customer_id):

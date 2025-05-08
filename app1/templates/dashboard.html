@@ -731,9 +731,9 @@
                                     <span class="customer-card-label">Phone:</span>
                                     <span class="customer-card-value">{{ customer.phone_number }}</span>
                                 </div>
-                                <div class="customer-card-row">
-                                    <span class="customer-card-label">Card No:</span>
-                                    <span class="customer-card-value">{{ customer.card_number }}</span>
+                                <div class="form-group">
+                                    <label for="card_number">Card Number (Optional)</label>
+                                    <input type="text" id="editCard" name="card_number" class="form-control">
                                 </div>
                                 <div class="customer-card-row">
                                     <span class="customer-card-label">Date Added:</span>
@@ -832,9 +832,10 @@
                     <input type="text" id="addPhone" name="phone_number" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="card_number">Card Number</label>
-                    <input type="text" id="addCard" name="card_number" class="form-control" required>
+                    <label for="card_number">Card Number (Optional)</label>
+                    <input type="text" id="addCard" name="card_number" class="form-control">
                 </div>
+                
                 <div class="modal-buttons">
                     <button type="button" class="btn modal-cancel" onclick="closeAddModal()">Cancel</button>
                     <button type="submit" class="btn">Add Customer</button>
@@ -842,7 +843,7 @@
             </form>
         </div>
     </div>
-
+<!-- 
     <script>
         // Function to open delete confirmation modal
 function openDeleteModal(customerId, customerName) {
@@ -1054,13 +1055,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Card number validation (simple check for non-empty)
-        const cardInput = form.querySelector('[name="card_number"]');
-        if (cardInput && cardInput.value.trim() === '') {
-            alert('Card number cannot be empty.');
-            event.preventDefault();
-            return false;
-        }
+        
         
         return true;
     }
@@ -1164,6 +1159,193 @@ function clearFilter() {
         document.querySelector('.customer-cards').style.display = 'block';
     }
 }
-    </script>
+    </script> -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        
+            // Open Delete Modal
+            window.openDeleteModal = function (customerId, customerName) {
+                document.getElementById('deleteModal').style.display = 'block';
+                document.getElementById('customerName').textContent = customerName;
+                document.getElementById('deleteForm').action = "{% url 'delete_customer' 0 %}".replace('0', customerId);
+            };
+        
+            // Close Delete Modal
+            window.closeDeleteModal = function () {
+                document.getElementById('deleteModal').style.display = 'none';
+            };
+        
+            // Open Edit Modal
+            window.openEditModal = function (customerId, name, place, phone, card) {
+                document.getElementById('editModal').style.display = 'block';
+                document.getElementById('editName').value = name;
+                document.getElementById('editPlace').value = place;
+                document.getElementById('editPhone').value = phone;
+                document.getElementById('editCard').value = card;
+                document.getElementById('editForm').action = "{% url 'edit_customer' 0 %}".replace('0', customerId);
+            };
+        
+            // Close Edit Modal
+            window.closeEditModal = function () {
+                document.getElementById('editModal').style.display = 'none';
+            };
+        
+            // Open Add Modal
+            window.openAddModal = function () {
+                document.getElementById('addModal').style.display = 'block';
+            };
+        
+            // Close Add Modal
+            window.closeAddModal = function () {
+                document.getElementById('addModal').style.display = 'none';
+            };
+        
+            // Filter by user
+            window.filterByUser = function (username) {
+                if (username === 'All') {
+                    clearFilter();
+                    return;
+                }
+        
+                document.getElementById('filter-info').style.display = 'block';
+                document.getElementById('filter-username').textContent = username;
+        
+                const tableRows = document.querySelectorAll('#customer-table-body tr');
+                const cardItems = document.querySelectorAll('.customer-card');
+        
+                let visibleCount = 0, visibleCardCount = 0;
+        
+                tableRows.forEach(row => {
+                    if (row.getAttribute('data-added-by') === username) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+        
+                cardItems.forEach(card => {
+                    if (card.getAttribute('data-added-by') === username) {
+                        card.style.display = '';
+                        visibleCardCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+        
+                toggleEmptyState(visibleCount, visibleCardCount);
+            };
+        
+            // Filter by current user
+            window.filterByCurrentUser = function () {
+                const currentUsername = '{{ username }}';
+                filterByUser(currentUsername);
+            };
+        
+            // Clear filter
+            window.clearFilter = function () {
+                document.getElementById('filter-info').style.display = 'none';
+        
+                const tableRows = document.querySelectorAll('#customer-table-body tr');
+                const cardItems = document.querySelectorAll('.customer-card');
+        
+                tableRows.forEach(row => row.style.display = '');
+                cardItems.forEach(card => card.style.display = '');
+        
+                document.getElementById('empty-filter-state').style.display = 'none';
+                if (window.innerWidth > 768) {
+                    document.querySelector('.customer-table-container').style.display = 'block';
+                } else {
+                    document.querySelector('.customer-cards').style.display = 'block';
+                }
+            };
+        
+            // Toggle Empty State
+            function toggleEmptyState(visibleCount, visibleCardCount) {
+                const tableContainer = document.querySelector('.customer-table-container');
+                const cardsContainer = document.querySelector('.customer-cards');
+                const emptyState = document.getElementById('empty-filter-state');
+        
+                if (visibleCount === 0 && visibleCardCount === 0) {
+                    tableContainer.style.display = 'none';
+                    cardsContainer.style.display = 'none';
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'none';
+                    if (window.innerWidth > 768) {
+                        tableContainer.style.display = 'block';
+                    } else {
+                        cardsContainer.style.display = 'block';
+                    }
+                }
+            }
+        
+            // Add click handlers to Added By cells (table & card)
+            document.querySelectorAll('.added-by-cell, .added-by-value').forEach(el => {
+                el.classList.add('added-by-filter');
+                el.addEventListener('click', () => {
+                    const username = el.textContent.trim();
+                    filterByUser(username);
+                });
+            });
+        
+            // Click outside modal to close
+            window.addEventListener('click', function (event) {
+                ['deleteModal', 'editModal', 'addModal'].forEach(id => {
+                    const modal = document.getElementById(id);
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+        
+            // Handle responsive display (table vs card)
+            function handleResponsiveDisplay() {
+                const tableContainer = document.querySelector('.customer-table-container');
+                const cardsContainer = document.querySelector('.customer-cards');
+                if (window.innerWidth <= 768) {
+                    tableContainer.style.display = 'none';
+                    cardsContainer.style.display = 'block';
+                } else {
+                    tableContainer.style.display = 'block';
+                    cardsContainer.style.display = 'none';
+                }
+            }
+        
+            handleResponsiveDisplay();
+            window.addEventListener('resize', handleResponsiveDisplay);
+        
+            // Form validation
+            function validateForm(event, form) {
+                const phoneInput = form.querySelector('[name="phone_number"]');
+                if (phoneInput && !/^\d{10}$/.test(phoneInput.value.trim())) {
+                    alert('Please enter a valid 10-digit phone number.');
+                    event.preventDefault();
+                    return false;
+                }
+                return true;
+            }
+        
+            const addForm = document.getElementById('addForm');
+            if (addForm) addForm.addEventListener('submit', function (e) { validateForm(e, this); });
+        
+            const editForm = document.getElementById('editForm');
+            if (editForm) editForm.addEventListener('submit', function (e) { validateForm(e, this); });
+        
+            // Auto-hide messages
+            const messages = document.querySelectorAll('.message');
+            if (messages.length > 0) {
+                setTimeout(() => {
+                    messages.forEach(message => {
+                        message.style.opacity = '0';
+                        message.style.transition = 'opacity 1s';
+                        setTimeout(() => message.style.display = 'none', 1000);
+                    });
+                }, 5000);
+            }
+        
+        });
+        </script>
+        
 </body>
 </html>

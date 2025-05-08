@@ -25,9 +25,12 @@ SECRET_KEY = 'django-insecure-%__=(05up&22i@@12-p)^xf)e^*8*1^t6-6m2vzvf36*-s*r@5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["hypercity.imcbs.com"]
 
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://hypercity.imcbs.com',
+    
+]
 # Application definition
 
 INSTALLED_APPS = [
