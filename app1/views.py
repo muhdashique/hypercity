@@ -5,9 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.views.decorators.cache import never_cache
-
 from .models import Customer
 from .forms import CustomerForm
+
+
 
 def login(request):
     if request.user.is_authenticated:
@@ -31,6 +32,8 @@ def login(request):
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     return response
+
+
 
 @never_cache
 @login_required(login_url='login')
@@ -56,6 +59,42 @@ def dashboard(request):
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     return response
+
+
+import openpyxl
+from django.http import HttpResponse
+
+@login_required(login_url='login')
+def export_customers_excel(request):
+    customers = Customer.objects.all().order_by('-created_at')
+
+    # Create an Excel workbook and sheet
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Customers'
+
+    # Define headers
+    headers = ['No.', 'Customer Name', 'Place', 'Phone Number', 'Card Number', 'Date Added', 'Added By']
+    sheet.append(headers)
+
+    # Add customer data
+    for idx, customer in enumerate(customers, start=1):
+        sheet.append([
+            idx,
+            customer.name,
+            customer.place,
+            customer.phone_number,
+            customer.card_number,
+            customer.created_at.strftime('%Y-%m-%d %H:%M'),
+            customer.added_by,
+        ])
+
+    # Prepare response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=customers.xlsx'
+    workbook.save(response)
+    return response
+
 
 @never_cache
 @login_required(login_url='login')
@@ -85,6 +124,9 @@ def add_data(request):
     response['Expires'] = '0'
     return response
 
+
+
+
 def logout(request):
     auth_logout(request)
     messages.success(request, "You have been logged out successfully.")
@@ -93,6 +135,9 @@ def logout(request):
     response['Pragma'] = 'no-cache'  
     response['Expires'] = '0'
     return response
+
+
+
 
 @never_cache
 @login_required(login_url='login')
@@ -120,6 +165,10 @@ def add_customer(request):
     
     return redirect('dashboard')
 
+
+
+
+
 @never_cache
 @login_required(login_url='login')
 def edit_customer(request, customer_id):
@@ -140,9 +189,11 @@ def edit_customer(request, customer_id):
         
         messages.success(request, f'Customer "{customer.name}" updated successfully!')
         return redirect('dashboard')
-    
-    # If someone tries to access this URL directly without POST data
     return redirect('dashboard')
+
+
+
+
 
 @never_cache
 @login_required(login_url='login')
