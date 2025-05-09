@@ -26,6 +26,8 @@ SECRET_KEY = 'django-insecure-%__=(05up&22i@@12-p)^xf)e^*8*1^t6-6m2vzvf36*-s*r@5
 DEBUG = True
 
 ALLOWED_HOSTS = ["hypercity.imcbs.com"]
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
 
 CSRF_TRUSTED_ORIGINS = [
     'https://hypercity.imcbs.com',

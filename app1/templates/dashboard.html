@@ -701,7 +701,7 @@
                                     <td>{{ customer.phone_number }}</td>
                                     <td>{{ customer.card_number }}</td>
                                     <td>{{ customer.created_at|date:"M d, Y" }}</td>
-                                    <td class="added-by-cell">{{ customer.added_by }}</td>
+                                    <td>{{ customer.added_by }}</td>
                                     <td>
                                         <div class="action-buttons">
                                             <button class="btn btn-edit" onclick="openEditModal('{{ customer.id }}', '{{ customer.name }}', '{{ customer.place }}', '{{ customer.phone_number }}', '{{ customer.card_number }}')"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -803,7 +803,7 @@
                 </div>
                 <div class="form-group">
                     <label for="card_number">Card Number</label>
-                    <input type="text" id="editCard" name="card_number" class="form-control" required>
+                    <input type="text" id="editCardNumber" name="card_number" class="form-control" required>
                 </div>
                 <div class="modal-buttons">
                     <button type="button" class="btn modal-cancel" onclick="closeEditModal()">Cancel</button>
@@ -1181,7 +1181,7 @@ function clearFilter() {
                 document.getElementById('editName').value = name;
                 document.getElementById('editPlace').value = place;
                 document.getElementById('editPhone').value = phone;
-                document.getElementById('editCard').value = card;
+                document.getElementById('editCardNumber').value = card;  // Changed to editCardNumber
                 document.getElementById('editForm').action = "{% url 'edit_customer' 0 %}".replace('0', customerId);
             };
         
